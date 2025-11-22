@@ -31,6 +31,25 @@ export const Header: React.FC<HeaderProps> = ({
   const { colors } = useTheme();
   const user = useSelector((state: RootState) => state.auth.user);
 
+  // Get display name - prioritize full name, then firstName, then username
+  const getDisplayName = (): string => {
+    if (!user) return '';
+    
+    // If both firstName and lastName exist, combine them
+    if (user.firstName && user.lastName) {
+      return `${user.firstName} ${user.lastName}`;
+    }
+    
+    // If only firstName exists
+    if (user.firstName) {
+      return user.firstName;
+    }
+    
+    // Fall back to username, capitalize first letter
+    const username = user.username || '';
+    return username.charAt(0).toUpperCase() + username.slice(1);
+  };
+
   return (
     <View
       style={[
@@ -78,12 +97,28 @@ export const Header: React.FC<HeaderProps> = ({
       {/* Right Side */}
       <View style={styles.rightContainer}>
         {showUser && user && (
-          <Text
-            style={[styles.userName, { color: colors.text }]}
-            numberOfLines={1}
-          >
-            {user.firstName || user.username}
-          </Text>
+          <View style={styles.userInfoContainer}>
+            <View style={styles.userTextContainer}>
+              <Text
+                style={[styles.greetingText, { color: colors.textSecondary }]}
+                numberOfLines={1}
+              >
+                Hello,
+              </Text>
+              <Text
+                style={[styles.userName, { color: colors.text }]}
+                numberOfLines={1}
+                ellipsizeMode="tail"
+              >
+                {getDisplayName()}
+              </Text>
+            </View>
+            <View style={[styles.userAvatar, { backgroundColor: colors.primary }]}>
+              <Text style={styles.avatarText}>
+                {getDisplayName().charAt(0).toUpperCase()}
+              </Text>
+            </View>
+          </View>
         )}
         {rightIcon && (
           <TouchableOpacity
@@ -143,9 +178,37 @@ const styles = StyleSheet.create({
   iconButton: {
     padding: spacing.xs,
   },
+  userNameContainer: {
+    maxWidth: 150,
+    marginRight: spacing.xs,
+  },
   userName: {
     fontSize: fontSize.sm,
-    fontWeight: fontWeight.medium,
+    fontWeight: fontWeight.semibold,
+  },
+  userInfoContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  userTextContainer: {
+    alignItems: 'flex-end',
+  },
+  greetingText: {
+    fontSize: 12,
+    fontWeight: '400' as any,
+  },
+  userAvatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600' as any,
   },
 });
 

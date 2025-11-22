@@ -5,6 +5,7 @@
 
 import { post } from './api';
 import { LoginCredentials, RegisterCredentials, User } from '../constants/types';
+import { saveRegisteredUser, verifyCredentials } from './storageService';
 
 /**
  * Login Response Interface
@@ -30,7 +31,29 @@ export const login = async (credentials: LoginCredentials): Promise<{
   token: string;
 }> => {
   try {
-    // DummyJSON auth endpoint
+    // First, check if this is a locally registered user
+    const localUser = await verifyCredentials(credentials.email, credentials.password);
+    
+    if (localUser) {
+      // User registered locally - create session
+      const user: User = {
+        id: Date.now().toString(),
+        username: localUser.username,
+        email: localUser.email,
+        firstName: localUser.username.split(' ')[0] || localUser.username,
+        lastName: localUser.username.split(' ')[1] || '',
+        memberSince: localUser.registeredAt,
+      };
+
+      const token = `local_token_${Date.now()}`;
+
+      return {
+        user,
+        token,
+      };
+    }
+
+    // If not a local user, try DummyJSON API for demo accounts
     // Use credentials: username: "emilys", password: "emilyspass"
     const response = await post<LoginResponse>('/auth/login', {
       username: credentials.email.split('@')[0], // Use email prefix as username
@@ -71,23 +94,28 @@ export const register = async (credentials: RegisterCredentials): Promise<{
   token: string;
 }> => {
   try {
-    // Since DummyJSON doesn't have a real register endpoint,
-    // we'll simulate it by creating a mock response
-    // In production, this would call a real register API
+    // Save user credentials locally for future login
+    await saveRegisteredUser({
+      email: credentials.email,
+      password: credentials.password,
+      username: credentials.username,
+    });
 
     // Simulate API delay
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
-    // Create mock user
+    // Create user
     const user: User = {
       id: Date.now().toString(),
       username: credentials.username,
       email: credentials.email,
+      firstName: credentials.username.split(' ')[0] || credentials.username,
+      lastName: credentials.username.split(' ')[1] || '',
       memberSince: new Date().toISOString(),
     };
 
-    // Create mock token
-    const token = `mock_token_${Date.now()}`;
+    // Create token
+    const token = `local_token_${Date.now()}`;
 
     return {
       user,

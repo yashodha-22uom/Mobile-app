@@ -1,4 +1,4 @@
-# 🔧 Sportify App - Troubleshooting Guide
+ 🔧 Sportify App - Troubleshooting Guide
 
 ## Issue 1: "java.lang.String cannot be cast to java.lang.Boolean"
 

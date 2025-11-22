@@ -11,6 +11,7 @@ const STORAGE_KEYS = {
   FAVORITES: '@sportify_favorites',
   THEME: '@sportify_theme',
   USER: '@sportify_user',
+  REGISTERED_USERS: '@sportify_registered_users',
 };
 
 /**
@@ -225,3 +226,62 @@ export const clearAuthData = async (): Promise<void> => {
     throw new Error('Failed to clear auth data');
   }
 };
+
+/**
+ * Save registered user credentials (for local authentication)
+ */
+export const saveRegisteredUser = async (credentials: { email: string; password: string; username: string }): Promise<void> => {
+  try {
+    const existingUsers = await getRegisteredUsers();
+    const newUser = {
+      email: credentials.email.toLowerCase(),
+      password: await encrypt(credentials.password),
+      username: credentials.username,
+      registeredAt: new Date().toISOString(),
+    };
+    
+    const updatedUsers = [...existingUsers, newUser];
+    await AsyncStorage.setItem(STORAGE_KEYS.REGISTERED_USERS, JSON.stringify(updatedUsers));
+  } catch (error) {
+    console.error('Error saving registered user:', error);
+    throw new Error('Failed to save user credentials');
+  }
+};
+
+/**
+ * Get all registered users
+ */
+export const getRegisteredUsers = async (): Promise<any[]> => {
+  try {
+    const usersData = await AsyncStorage.getItem(STORAGE_KEYS.REGISTERED_USERS);
+    if (usersData) {
+      return JSON.parse(usersData);
+    }
+    return [];
+  } catch (error) {
+    console.error('Error getting registered users:', error);
+    return [];
+  }
+};
+
+/**
+ * Verify user credentials
+ */
+export const verifyCredentials = async (email: string, password: string): Promise<any | null> => {
+  try {
+    const users = await getRegisteredUsers();
+    const user = users.find((u) => u.email === email.toLowerCase());
+    
+    if (user) {
+      const decryptedPassword = await decrypt(user.password);
+      if (decryptedPassword === password) {
+        return user;
+      }
+    }
+    return null;
+  } catch (error) {
+    console.error('Error verifying credentials:', error);
+    return null;
+  }
+};
+
